@@ -5,6 +5,7 @@
         <vendor name="${project.organization.name}" url="${project.organization.url}" />
         <param name="plugin-icon">images/pluginIcon.png</param>
         <param name="plugin-logo">images/pluginLogo.png</param>
+        <param name="configure.url">/plugins/servlet/clickhouse-exporter/admin</param>
     </plugin-info>
 
     <!-- add our i18n resource -->
@@ -20,5 +21,9 @@
 
         <context>clickhouse-exporter</context>
     </web-resource>
+
+    <servlet key="admin-servlet" class="plugin.adminui.AdminServlet">
+        <url-pattern>/clickhouse-exporter/admin</url-pattern>
+    </servlet>
     
 </atlassian-plugin>
