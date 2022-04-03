@@ -25,6 +25,8 @@ import com.atlassian.sal.api.transaction.TransactionCallback;
 import com.atlassian.sal.api.transaction.TransactionTemplate;
 import com.atlassian.sal.api.user.UserManager;
 
+import java.util.List;
+
 @Path("/")
 public class ConfigResource {
     @ComponentImport
@@ -51,6 +53,8 @@ public class ConfigResource {
         private String dbUrl;
         @XmlElement(name="project_code")
         private String projectCode;
+        @XmlElement(name="issue_types")
+        private List<String> issueTypes;
 
         public String getDbUrl() {
             return dbUrl;
@@ -66,6 +70,14 @@ public class ConfigResource {
 
         public void setProjectCode(String projectCode) {
             this.projectCode = projectCode;
+        }
+
+        public List<String> getIssueTypes() {
+            return issueTypes;
+        }
+
+        public void setIssueTypes(List<String> issueTypes) {
+            this.issueTypes = issueTypes;
         }
     }
 
@@ -83,6 +95,7 @@ public class ConfigResource {
 
             config.setDbUrl((String) settings.get(configPrefix + ".jdbc_url"));
             config.setProjectCode((String) settings.get(configPrefix + ".project_code"));
+            config.setIssueTypes((List) settings.get(configPrefix + ".issue_types"));
 
             return config;
         })).build();
@@ -102,6 +115,7 @@ public class ConfigResource {
             PluginSettings pluginSettings = pluginSettingsFactory.createGlobalSettings();
             pluginSettings.put(configPrefix + ".jdbc_url", config.getDbUrl());
             pluginSettings.put(configPrefix + ".project_code", config.getProjectCode());
+            pluginSettings.put(configPrefix + ".issue_types", config.getIssueTypes());
             return null;
         });
 

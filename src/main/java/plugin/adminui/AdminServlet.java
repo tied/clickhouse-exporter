@@ -1,5 +1,7 @@
 package plugin.adminui;
 
+import com.atlassian.jira.config.ConstantsManager;
+import com.atlassian.jira.issue.issuetype.IssueType;
 import com.atlassian.jira.project.Project;
 import com.atlassian.jira.project.ProjectManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
@@ -14,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,13 +30,16 @@ public class AdminServlet extends HttpServlet {
     private final TemplateRenderer renderer;
     @ComponentImport
     private final ProjectManager projectManager;
+    @ComponentImport
+    private final ConstantsManager constantsManager;
 
     @Inject
-    public AdminServlet(UserManager userManager, LoginUriProvider loginUriProvider, TemplateRenderer renderer, ProjectManager projectManager) {
+    public AdminServlet(UserManager userManager, LoginUriProvider loginUriProvider, TemplateRenderer renderer, ProjectManager projectManager, ConstantsManager constantsManager) {
         this.userManager = userManager;
         this.loginUriProvider = loginUriProvider;
         this.renderer = renderer;
         this.projectManager = projectManager;
+        this.constantsManager = constantsManager;
     }
 
     @Override
@@ -45,11 +51,13 @@ public class AdminServlet extends HttpServlet {
             return;
         }
 
-
         Map<String, Object> context = new HashMap<>();
 
         List<Project> projects = projectManager.getProjects();
         context.put("projects", projects);
+
+        Collection<IssueType> issueTypes = constantsManager.getAllIssueTypeObjects();
+        context.put("issue_types", issueTypes);
 
         response.setContentType("text/html;charset=utf-8");
         renderer.render("admin.vm", context, response.getWriter());
