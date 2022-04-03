@@ -21,14 +21,12 @@
     </div>
     <div class="field-group">
         <label for="issue_types">$i18n.getText("clickhouse-exporter.admin.issue_types.label")</label>
-        <fieldset id="issue_types">
-            #foreach( $issue_type in $issue_types )
-                <div>
-                    <input name="issue_types" id="$issue_type.getId()" value="$issue_type.getId()" type="checkbox">
-                    <label for="$issue_type.getId()"><img src="/jira$issue_type.getIconUrl()"> $issue_type.getName()</label>
-                </div>
-            #end
-        </fieldset>
+        #foreach( $issue_type in $issue_types )
+            <div>
+                <input name="issue_types" id="$issue_type.getId()" value="$issue_type.getId()" type="checkbox">
+                <label for="$issue_type.getId()"><img src="/jira$issue_type.getIconUrl()"> $issue_type.getName()</label>
+            </div>
+        #end
     </div>
     <div class="field-group">
         <input type="submit" value="$i18n.getText("clickhouse-exporter.admin.save.label")" class="button">
