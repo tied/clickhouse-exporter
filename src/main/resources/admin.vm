@@ -12,7 +12,12 @@
     </div>
     <div class="field-group">
         <label for="project_code">$i18n.getText("clickhouse-exporter.admin.project_code.label")</label>
-        <input type="text" id="project_code" name="project_code" class="text">
+        <select id="project_code" name="project_code">
+            <option value="">$i18n.getText("clickhouse-exporter.admin.project_code.not_selected")</option>
+            #foreach( $project in $projects )
+                <option value="$project.getKey()">$project.getName() ($project.getKey())</option>
+            #end
+        </select>
     </div>
     <div class="field-group">
         <input type="submit" value="$i18n.getText("clickhouse-exporter.admin.save.label")" class="button">
