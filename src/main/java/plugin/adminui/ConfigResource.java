@@ -34,6 +34,8 @@ public class ConfigResource {
     @ComponentImport
     private final TransactionTemplate transactionTemplate;
 
+    private static final String configPrefix = "ru.sbrf.jira.clickhouse.exporter";
+
     @Inject
     public ConfigResource(UserManager userManager, PluginSettingsFactory pluginSettingsFactory,
                           TransactionTemplate transactionTemplate) {
@@ -45,25 +47,25 @@ public class ConfigResource {
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.FIELD)
     public static final class Config {
-        @XmlElement
-        private String name;
-        @XmlElement
-        private int time;
+        @XmlElement(name="jdbc_url")
+        private String dbUrl;
+        @XmlElement(name="project_code")
+        private String projectCode;
 
-        public String getName() {
-            return name;
+        public String getDbUrl() {
+            return dbUrl;
         }
 
-        public void setName(String name) {
-            this.name = name;
+        public void setDbUrl(String dbUrl) {
+            this.dbUrl = dbUrl;
         }
 
-        public int getTime() {
-            return time;
+        public String getProjectCode() {
+            return projectCode;
         }
 
-        public void setTime(int time) {
-            this.time = time;
+        public void setProjectCode(String projectCode) {
+            this.projectCode = projectCode;
         }
     }
 
@@ -75,18 +77,14 @@ public class ConfigResource {
             return Response.status(Status.UNAUTHORIZED).build();
         }
 
-        return Response.ok(transactionTemplate.execute(new TransactionCallback() {
-            public Object doInTransaction() {
-                PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
-                Config config = new Config();
-                config.setName((String) settings.get(Config.class.getName() + ".name"));
+        return Response.ok(transactionTemplate.execute(() -> {
+            PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
+            Config config = new Config();
 
-                String time = (String) settings.get(Config.class.getName() + ".time");
-                if (time != null) {
-                    config.setTime(Integer.parseInt(time));
-                }
-                return config;
-            }
+            config.setDbUrl((String) settings.get(configPrefix + ".jdbc_url"));
+            config.setProjectCode((String) settings.get(configPrefix + ".project_code"));
+
+            return config;
         })).build();
     }
 
@@ -100,16 +98,13 @@ public class ConfigResource {
             return Response.status(Status.UNAUTHORIZED).build();
         }
 
-        transactionTemplate.execute(new TransactionCallback()
-        {
-            public Object doInTransaction()
-            {
-                PluginSettings pluginSettings = pluginSettingsFactory.createGlobalSettings();
-                pluginSettings.put(Config.class.getName() + ".name", config.getName());
-                pluginSettings.put(Config.class.getName()  +".time", Integer.toString(config.getTime()));
-                return null;
-            }
+        transactionTemplate.execute(() -> {
+            PluginSettings pluginSettings = pluginSettingsFactory.createGlobalSettings();
+            pluginSettings.put(configPrefix + ".jdbc_url", config.getDbUrl());
+            pluginSettings.put(configPrefix + ".project_code", config.getProjectCode());
+            return null;
         });
+
         return Response.noContent().build();
     }
 }

@@ -7,12 +7,12 @@
 <body>
 <form id="admin" class="aui">
     <div class="field-group">
-        <label for="name">$i18n.getText("clickhouse-exporter.admin.name.label")</label>
-        <input type="text" id="name" name="name" class="text">
+        <label for="jdbc_url">$i18n.getText("clickhouse-exporter.admin.jdbc_url.label")</label>
+        <input type="text" id="jdbc_url" name="jdbc_url" class="text">
     </div>
     <div class="field-group">
-        <label for="time">$i18n.getText("clickhouse-exporter.admin.time.label")</label>
-        <input type="text" id="time" name="time" class="text">
+        <label for="project_code">$i18n.getText("clickhouse-exporter.admin.project_code.label")</label>
+        <input type="text" id="project_code" name="project_code" class="text">
     </div>
     <div class="field-group">
         <input type="submit" value="$i18n.getText("clickhouse-exporter.admin.save.label")" class="button">

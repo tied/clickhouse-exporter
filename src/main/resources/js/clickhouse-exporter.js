@@ -12,8 +12,8 @@
             dataType: "json"
         }).done(function(config) { // when the configuration is returned...
             // ...populate the form.
-            $("#name").val(config.name);
-            $("#time").val(config.time);
+            $("#jdbc_url").val(config.jdbc_url);
+            $("#project_code").val(config.project_code);
         });
 
         function updateConfig() {
@@ -21,7 +21,7 @@
                 url: url,
                 type: "PUT",
                 contentType: "application/json",
-                data: JSON.stringify({ name: $("#name").val(), time: $("#time").val() }),
+                data: JSON.stringify({ jdbc_url: $("#jdbc_url").val(), "project_code": $("#project_code").val() }),
                 processData: false
             });
         }
