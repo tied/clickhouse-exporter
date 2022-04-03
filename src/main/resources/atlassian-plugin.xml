@@ -25,5 +25,9 @@
     <servlet key="admin-servlet" class="plugin.adminui.AdminServlet">
         <url-pattern>/clickhouse-exporter/admin</url-pattern>
     </servlet>
+
+    <rest key="rest" path="/clickhouse-exporter" version="1.0">
+        <description>Provides REST resources for the admin UI.</description>
+    </rest>
     
 </atlassian-plugin>

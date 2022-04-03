@@ -89,4 +89,27 @@ public class ConfigResource {
             }
         })).build();
     }
+
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response put(final Config config, @Context HttpServletRequest request)
+    {
+        String username = userManager.getRemoteUsername(request);
+        if (username == null || !userManager.isSystemAdmin(username))
+        {
+            return Response.status(Status.UNAUTHORIZED).build();
+        }
+
+        transactionTemplate.execute(new TransactionCallback()
+        {
+            public Object doInTransaction()
+            {
+                PluginSettings pluginSettings = pluginSettingsFactory.createGlobalSettings();
+                pluginSettings.put(Config.class.getName() + ".name", config.getName());
+                pluginSettings.put(Config.class.getName()  +".time", Integer.toString(config.getTime()));
+                return null;
+            }
+        });
+        return Response.noContent().build();
+    }
 }

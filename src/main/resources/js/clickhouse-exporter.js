@@ -17,7 +17,18 @@
         });
 
         function updateConfig() {
-            // we will fill this in later!
+            $.ajax({
+                url: url,
+                type: "PUT",
+                contentType: "application/json",
+                data: JSON.stringify({ name: $("#name").val(), time: $("#time").val() }),
+                processData: false
+            });
         }
+
+        $("#admin").on("submit", function(e) {
+            e.preventDefault();
+            updateConfig();
+        });
     });
 })(AJS.$ || jQuery);
