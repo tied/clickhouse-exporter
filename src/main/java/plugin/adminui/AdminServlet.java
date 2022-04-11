@@ -8,6 +8,8 @@ import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.sal.api.auth.LoginUriProvider;
 import com.atlassian.sal.api.user.UserManager;
 import com.atlassian.templaterenderer.TemplateRenderer;
+import org.springframework.beans.factory.annotation.Autowired;
+import ru.sbrf.jira.clickhouse.exporter.IssueFieldManager;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -32,14 +34,17 @@ public class AdminServlet extends HttpServlet {
     private final ProjectManager projectManager;
     @ComponentImport
     private final ConstantsManager constantsManager;
+    @Autowired
+    private final IssueFieldManager fieldManager;
 
     @Inject
-    public AdminServlet(UserManager userManager, LoginUriProvider loginUriProvider, TemplateRenderer renderer, ProjectManager projectManager, ConstantsManager constantsManager) {
+    public AdminServlet(UserManager userManager, LoginUriProvider loginUriProvider, TemplateRenderer renderer, ProjectManager projectManager, ConstantsManager constantsManager, IssueFieldManager fieldManager) {
         this.userManager = userManager;
         this.loginUriProvider = loginUriProvider;
         this.renderer = renderer;
         this.projectManager = projectManager;
         this.constantsManager = constantsManager;
+        this.fieldManager = fieldManager;
     }
 
     @Override
@@ -58,6 +63,8 @@ public class AdminServlet extends HttpServlet {
 
         Collection<IssueType> issueTypes = constantsManager.getAllIssueTypeObjects();
         context.put("issue_types", issueTypes);
+
+        context.put("issue_fields", fieldManager.getIssueFields());
 
         response.setContentType("text/html;charset=utf-8");
         renderer.render("admin.vm", context, response.getWriter());

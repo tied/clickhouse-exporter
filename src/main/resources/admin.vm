@@ -29,6 +29,15 @@
         #end
     </div>
     <div class="field-group">
+        <label for="issue_fields">$i18n.getText("clickhouse-exporter.admin.issue_fields.label")</label>
+        #foreach( $issue_field in $issue_fields )
+            <div>
+                <input name="issue_fields" id="$issue_field.getId()" value="$issue_field.getId()" type="checkbox">
+                <label for="$issue_field.getId()">$issue_field.getName()</label>
+            </div>
+        #end
+    </div>
+    <div class="field-group">
         <input type="submit" value="$i18n.getText("clickhouse-exporter.admin.save.label")" class="button">
     </div>
 </form>

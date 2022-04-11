@@ -15,6 +15,7 @@
             $("#jdbc_url").val(config.jdbc_url);
             $("#project_code").val(config.project_code);
             $("input[name='issue_types']").map((i, e) => e.checked = config.issue_types.includes(e.value));
+            $("input[name='issue_fields']").map((i, e) => e.checked = config.issue_fields.includes(e.value));
         });
 
         function updateConfig() {
@@ -25,7 +26,8 @@
                 data: JSON.stringify({
                     jdbc_url: $("#jdbc_url").val(),
                     project_code: $("#project_code").val(),
-                    issue_types: $("input[name='issue_types']:checked").map((i, e) => e.value).get()
+                    issue_types: $("input[name='issue_types']:checked").map((i, e) => e.value).get(),
+                    issue_fields: $("input[name='issue_fields']:checked").map((i, e) => e.value).get()
                 }),
                 processData: false
             });
