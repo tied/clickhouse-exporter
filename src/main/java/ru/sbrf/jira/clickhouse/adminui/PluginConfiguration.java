@@ -1,4 +1,4 @@
-package plugin.adminui;
+package ru.sbrf.jira.clickhouse.adminui;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -17,29 +17,27 @@ import javax.xml.bind.annotation.XmlRootElement;
 
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 
-import javax.inject.Inject;
-
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import com.atlassian.sal.api.transaction.TransactionTemplate;
 import com.atlassian.sal.api.user.UserManager;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
+@Component
 @Path("/")
-public class ConfigResource {
-    @ComponentImport
+public class PluginConfiguration {
     private final UserManager userManager;
-    @ComponentImport
     private final PluginSettingsFactory pluginSettingsFactory;
-    @ComponentImport
     private final TransactionTemplate transactionTemplate;
 
     private static final String configPrefix = "ru.sbrf.jira.clickhouse.exporter";
 
-    @Inject
-    public ConfigResource(UserManager userManager, PluginSettingsFactory pluginSettingsFactory,
-                          TransactionTemplate transactionTemplate) {
+    @Autowired
+    public PluginConfiguration(@ComponentImport UserManager userManager, @ComponentImport PluginSettingsFactory pluginSettingsFactory,
+                               @ComponentImport TransactionTemplate transactionTemplate) {
         this.userManager = userManager;
         this.pluginSettingsFactory = pluginSettingsFactory;
         this.transactionTemplate = transactionTemplate;
@@ -48,13 +46,13 @@ public class ConfigResource {
     @XmlRootElement
     @XmlAccessorType(XmlAccessType.FIELD)
     public static final class Config {
-        @XmlElement(name="jdbc_url")
+        @XmlElement(name = "jdbc_url")
         private String dbUrl;
-        @XmlElement(name="project_code")
+        @XmlElement(name = "project_code")
         private String projectCode;
-        @XmlElement(name="issue_types")
+        @XmlElement(name = "issue_types")
         private List<String> issueTypes;
-        @XmlElement(name="issue_fields")
+        @XmlElement(name = "issue_fields")
         private List<String> issueFields;
 
         public String getDbUrl() {
@@ -113,11 +111,9 @@ public class ConfigResource {
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response put(final Config config, @Context HttpServletRequest request)
-    {
+    public Response put(final Config config, @Context HttpServletRequest request) {
         String username = userManager.getRemoteUsername(request);
-        if (username == null || !userManager.isSystemAdmin(username))
-        {
+        if (username == null || !userManager.isSystemAdmin(username)) {
             return Response.status(Status.UNAUTHORIZED).build();
         }
 

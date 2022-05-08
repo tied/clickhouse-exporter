@@ -22,7 +22,7 @@
         <context>clickhouse-exporter</context>
     </web-resource>
 
-    <servlet key="admin-servlet" class="plugin.adminui.AdminServlet">
+    <servlet key="admin-servlet" class="ru.sbrf.jira.clickhouse.adminui.AdminServlet">
         <url-pattern>/clickhouse-exporter/admin</url-pattern>
     </servlet>
 

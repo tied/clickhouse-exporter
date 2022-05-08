@@ -1,4 +1,4 @@
-package plugin.adminui;
+package ru.sbrf.jira.clickhouse.adminui;
 
 import com.atlassian.jira.config.ConstantsManager;
 import com.atlassian.jira.issue.issuetype.IssueType;
@@ -24,21 +24,15 @@ import java.util.List;
 import java.util.Map;
 
 public class AdminServlet extends HttpServlet {
-    @ComponentImport
     private final UserManager userManager;
-    @ComponentImport
     private final LoginUriProvider loginUriProvider;
-    @ComponentImport
     private final TemplateRenderer renderer;
-    @ComponentImport
     private final ProjectManager projectManager;
-    @ComponentImport
     private final ConstantsManager constantsManager;
-    @Autowired
     private final IssueFieldManager fieldManager;
 
     @Inject
-    public AdminServlet(UserManager userManager, LoginUriProvider loginUriProvider, TemplateRenderer renderer, ProjectManager projectManager, ConstantsManager constantsManager, IssueFieldManager fieldManager) {
+    public AdminServlet(@ComponentImport UserManager userManager, @ComponentImport LoginUriProvider loginUriProvider, @ComponentImport TemplateRenderer renderer, @ComponentImport ProjectManager projectManager, @ComponentImport ConstantsManager constantsManager, IssueFieldManager fieldManager) {
         this.userManager = userManager;
         this.loginUriProvider = loginUriProvider;
         this.renderer = renderer;

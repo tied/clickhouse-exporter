@@ -2,6 +2,7 @@ package ru.sbrf.jira.clickhouse.exporter;
 
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.fields.FieldManager;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.JiraImport;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,11 +12,10 @@ import java.util.List;
 
 @Component
 public class IssueFieldManager {
-    @JiraImport
     private final FieldManager fieldManager;
 
     @Autowired
-    public IssueFieldManager(FieldManager fieldManager) {
+    public IssueFieldManager(@ComponentImport FieldManager fieldManager) {
         this.fieldManager = fieldManager;
     }
 
