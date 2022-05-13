@@ -9,20 +9,20 @@ import com.atlassian.sal.api.auth.LoginUriProvider;
 import com.atlassian.sal.api.user.UserManager;
 import com.atlassian.templaterenderer.TemplateRenderer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import ru.sbrf.jira.clickhouse.exporter.IssueField;
 import ru.sbrf.jira.clickhouse.exporter.IssueFieldManager;
+import ru.sbrf.jira.clickhouse.exporter.SystemFieldType;
 
-import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+@Component
 public class AdminServlet extends HttpServlet {
     private final UserManager userManager;
     private final LoginUriProvider loginUriProvider;
@@ -31,7 +31,7 @@ public class AdminServlet extends HttpServlet {
     private final ConstantsManager constantsManager;
     private final IssueFieldManager fieldManager;
 
-    @Inject
+    @Autowired
     public AdminServlet(@ComponentImport UserManager userManager, @ComponentImport LoginUriProvider loginUriProvider, @ComponentImport TemplateRenderer renderer, @ComponentImport ProjectManager projectManager, @ComponentImport ConstantsManager constantsManager, IssueFieldManager fieldManager) {
         this.userManager = userManager;
         this.loginUriProvider = loginUriProvider;
@@ -44,8 +44,7 @@ public class AdminServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String username = userManager.getRemoteUsername(request);
-        if (username == null || !userManager.isSystemAdmin(username))
-        {
+        if (username == null || !userManager.isSystemAdmin(username)) {
             redirectToLogin(request, response);
             return;
         }
@@ -58,22 +57,31 @@ public class AdminServlet extends HttpServlet {
         Collection<IssueType> issueTypes = constantsManager.getAllIssueTypeObjects();
         context.put("issue_types", issueTypes);
 
-        context.put("issue_fields", fieldManager.getIssueFields());
+        List<IssueField> issueFields = new ArrayList<>();
+        for (String id : fieldManager.getAllIssueFields()) {
+            if (fieldManager.isSystemField(id)) {
+                SystemFieldType fieldType = SystemFieldType.getTypeByKey(id);
+                if (fieldType == null) {
+                    continue;
+                }
+            }
+
+            String name = fieldManager.getFieldName(id);
+            issueFields.add(new IssueField(id, name));
+        }
+        context.put("issue_fields", issueFields);
 
         response.setContentType("text/html;charset=utf-8");
         renderer.render("admin.vm", context, response.getWriter());
     }
 
-    private void redirectToLogin(HttpServletRequest request, HttpServletResponse response) throws IOException
-    {
+    private void redirectToLogin(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.sendRedirect(loginUriProvider.getLoginUri(getUri(request)).toASCIIString());
     }
 
-    private URI getUri(HttpServletRequest request)
-    {
+    private URI getUri(HttpServletRequest request) {
         StringBuffer builder = request.getRequestURL();
-        if (request.getQueryString() != null)
-        {
+        if (request.getQueryString() != null) {
             builder.append("?");
             builder.append(request.getQueryString());
         }

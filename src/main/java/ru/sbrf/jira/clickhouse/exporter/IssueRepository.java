@@ -16,13 +16,13 @@ import java.util.*;
 @Component
 public class IssueRepository {
     private final ClickHouseDataSource dataSource;
-    private final JiraToClickhouseTypeAdapter typeAdapter;
+    private final IssueFieldManager typeAdapter;
     private final PluginConfigurationAdapter configuration;
     private final String TABLE_NAME = "jira_events";
     private static final Logger logger = LoggerFactory.getLogger(IssueRepository.class);
 
     @Autowired
-    public IssueRepository(ClickHouseDataSource dataSource, JiraToClickhouseTypeAdapter typeAdapter, PluginConfigurationAdapter configuration) {
+    public IssueRepository(ClickHouseDataSource dataSource, IssueFieldManager typeAdapter, PluginConfigurationAdapter configuration) {
         this.dataSource = dataSource;
         this.typeAdapter = typeAdapter;
         this.configuration = configuration;
