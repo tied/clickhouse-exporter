@@ -1,5 +1,6 @@
 package ru.sbrf.jira.clickhouse.exporter;
 
+import com.atlassian.jira.issue.Issue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -56,12 +57,16 @@ public class IssueRepository {
         }
 
         for (String column : columns) {
-            String type = existingColumns.get(column);
+            String type;
+            type = existingColumns.get(column);
             if (type == null) {
-
-                type = typeAdapter.getFieldType(column);
-                if (type == null) {
-                    continue;
+                if ("timestamp".equals(column)) {
+                    type = "TimeStamp";
+                } else {
+                    type = typeAdapter.getFieldType(column);
+                    if (type == null) {
+                        continue;
+                    }
                 }
 
                 String sql = String.format("ALTER TABLE %s ADD COLUMN %s %s;", TABLE_NAME, column, type);
@@ -85,9 +90,14 @@ public class IssueRepository {
         sql.append('(');
 
         for (String column : columns) {
-            String type = typeAdapter.getFieldType(column);
-            if (type == null) {
-                continue;
+            String type;
+            if ("timestamp".equals(column)) {
+                type = "TimeStamp";
+            } else {
+                type = typeAdapter.getFieldType(column);
+                if (type == null) {
+                    continue;
+                }
             }
 
             sql.append(column);
@@ -108,7 +118,9 @@ public class IssueRepository {
         }
     }
 
-    public void addEventData(Map<String, Object> eventData) {
+    public void addEventData(Date time, Issue issue) {
+
+
         /*StringBuilder sqlBuilder = new StringBuilder("")
 
         try (ClickHouseConnection connection = dataSource.getConnection();
@@ -127,6 +139,7 @@ public class IssueRepository {
     private List<String> getFields() {
         Set<String> allowedFields = new HashSet<>();
         allowedFields.add("id");
+        allowedFields.add("timestamp");
         Object fieldsValue = configuration.getValue("issue_fields");
         if (fieldsValue != null) {
             allowedFields.addAll((Collection<String>) fieldsValue);
@@ -134,6 +147,7 @@ public class IssueRepository {
 
         Set<String> fields = new LinkedHashSet<>();
         fields.add("id");
+        fields.add("timestamp");
         fields.addAll(typeAdapter.getAllIssueFields());
         fields.retainAll(allowedFields);
         return new ArrayList<>(fields);
