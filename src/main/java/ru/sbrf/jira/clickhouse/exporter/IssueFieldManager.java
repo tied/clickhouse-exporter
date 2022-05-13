@@ -1,5 +1,8 @@
 package ru.sbrf.jira.clickhouse.exporter;
 
+import com.atlassian.jira.JiraDataType;
+import com.atlassian.jira.JiraDataTypeImpl;
+import com.atlassian.jira.JiraDataTypes;
 import com.atlassian.jira.issue.Issue;
 import com.atlassian.jira.issue.fields.FieldManager;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
