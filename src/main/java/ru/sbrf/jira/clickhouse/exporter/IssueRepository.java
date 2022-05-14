@@ -1,6 +1,8 @@
 package ru.sbrf.jira.clickhouse.exporter;
 
 import com.atlassian.jira.issue.Issue;
+import com.google.common.base.Strings;
+import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,23 +11,22 @@ import ru.yandex.clickhouse.ClickHouseConnection;
 import ru.yandex.clickhouse.ClickHouseDataSource;
 import ru.yandex.clickhouse.ClickHouseStatement;
 
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
+import java.util.Date;
 
 @Component
 public class IssueRepository {
     private final ClickHouseDataSource dataSource;
-    private final IssueFieldManager typeAdapter;
+    private final IssueFieldManager fieldManager;
     private final PluginConfigurationAdapter configuration;
     private final String TABLE_NAME = "jira_events";
     private static final Logger logger = LoggerFactory.getLogger(IssueRepository.class);
 
     @Autowired
-    public IssueRepository(ClickHouseDataSource dataSource, IssueFieldManager typeAdapter, PluginConfigurationAdapter configuration) {
+    public IssueRepository(ClickHouseDataSource dataSource, IssueFieldManager fieldManager, PluginConfigurationAdapter configuration) {
         this.dataSource = dataSource;
-        this.typeAdapter = typeAdapter;
+        this.fieldManager = fieldManager;
         this.configuration = configuration;
     }
 
@@ -62,8 +63,10 @@ public class IssueRepository {
             if (type == null) {
                 if ("timestamp".equals(column)) {
                     type = "TimeStamp";
+                } else if ("event_id".equals(column)) {
+                    type = "UUID";
                 } else {
-                    type = typeAdapter.getFieldType(column);
+                    type = fieldManager.getFieldType(column);
                     if (type == null) {
                         continue;
                     }
@@ -74,7 +77,7 @@ public class IssueRepository {
                     logger.debug("Executing sql {}", sql);
                     statement.execute(sql);
                 }
-            } else if (!type.equalsIgnoreCase(typeAdapter.getFieldType(column))) {
+            } else if (!type.equalsIgnoreCase(fieldManager.getFieldType(column))) {
                 String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", TABLE_NAME, column, type);
                 try (ClickHouseStatement statement = connection.createStatement()) {
                     logger.debug("Executing sql {}", sql);
@@ -93,8 +96,10 @@ public class IssueRepository {
             String type;
             if ("timestamp".equals(column)) {
                 type = "TimeStamp";
+            } else if ("event_id".equals(column)) {
+                type = "UUID";
             } else {
-                type = typeAdapter.getFieldType(column);
+                type = fieldManager.getFieldType(column);
                 if (type == null) {
                     continue;
                 }
@@ -106,7 +111,7 @@ public class IssueRepository {
             sql.append(',');
         }
 
-        sql.append("PRIMARY KEY(id)");
+        sql.append("PRIMARY KEY(event_id)");
         sql.append(')');
         sql.append("ENGINE = MergeTree();");
 
@@ -119,26 +124,47 @@ public class IssueRepository {
     }
 
     public void addEventData(Date time, Issue issue) {
+        StringBuilder sql = new StringBuilder("INSERT INTO ");
+        sql.append(TABLE_NAME);
+        sql.append(' ');
 
+        sql.append('(');
+        List<String> fields = getFields();
+        sql.append(String.join(",", fields));
+        sql.append(')');
 
-        /*StringBuilder sqlBuilder = new StringBuilder("")
+        sql.append(" VALUES (");
+        String[] questions = new String[fields.size()];
+        Arrays.fill(questions, "?");
+        sql.append(String.join(",", questions));
+        sql.append(')');
+        sql.append(';');
 
         try (ClickHouseConnection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement()) {
-            statement.execute(String.format("insert into jira_events values ('%s', '%s', '%s', '%s')", issueEvent.getTime().toString(), issueEvent.getUser().getName().toString(), issueEvent.getProject().getName().toString(), issue.getKey().toString()));
-            System.out.println("wrote to db");
+             PreparedStatement statement = connection.prepareStatement(sql.toString())) {
+            for (int i = 0; i < fields.size(); i++) {
+                String field = fields.get(i);
+                Object value;
+                if ("timestamp".equals(field)) {
+                    value = new Timestamp(time.getTime());
+                } else if ("event_id".equals(field)) {
+                    value = UUID.randomUUID();
+                } else {
+                    value = fieldManager.getFieldValue(issue, field);
+                }
+                statement.setObject(i + 1, value);
+            }
+
+            statement.execute();
         } catch (SQLException e) {
-            e.printStackTrace();
+            logger.error("SQL error: {}", e.getMessage());
         }
-
-        for (Map.Entry<String, Object> entry : eventData.entrySet()) {
-
-        }*/
     }
 
     private List<String> getFields() {
         Set<String> allowedFields = new HashSet<>();
-        allowedFields.add("id");
+        allowedFields.add("event_id");
+        allowedFields.add("issue_id");
         allowedFields.add("timestamp");
         Object fieldsValue = configuration.getValue("issue_fields");
         if (fieldsValue != null) {
@@ -146,9 +172,10 @@ public class IssueRepository {
         }
 
         Set<String> fields = new LinkedHashSet<>();
-        fields.add("id");
+        fields.add("event_id");
+        fields.add("issue_id");
         fields.add("timestamp");
-        fields.addAll(typeAdapter.getAllIssueFields());
+        fields.addAll(fieldManager.getAllIssueFields());
         fields.retainAll(allowedFields);
         return new ArrayList<>(fields);
     }

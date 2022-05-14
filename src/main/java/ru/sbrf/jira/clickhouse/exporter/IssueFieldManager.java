@@ -24,7 +24,7 @@ public class IssueFieldManager {
     }
 
     public String getFieldType(String fieldId) {
-        if ("id".equals(fieldId)) {
+        if ("issue_id".equals(fieldId)) {
             return "Int64";
         }
 
@@ -61,7 +61,7 @@ public class IssueFieldManager {
     }
 
     public Object getFieldValue(Issue issue, String fieldId) {
-        if ("id".equals(fieldId)) {
+        if ("issue_id".equals(fieldId)) {
             return issue.getId();
         }
 

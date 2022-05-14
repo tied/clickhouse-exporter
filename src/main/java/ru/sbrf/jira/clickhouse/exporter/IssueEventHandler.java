@@ -37,9 +37,10 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
 
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) {
-        Long eventTypeId = issueEvent.getEventTypeId();
+        Long eventTypeId = issueEvent.getEventTypeId(); // todo filter!!!
         Issue issue = issueEvent.getIssue();
 
+        issueRepository.addEventData(issueEvent.getTime(), issue);
     }
 
 }
