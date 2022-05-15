@@ -15,7 +15,7 @@
         <select id="project_code" name="project_code">
             <option value="">$i18n.getText("clickhouse-exporter.admin.project_code.not_selected")</option>
             #foreach( $project in $projects )
-                <option value="$project.getKey()">$project.getName() ($project.getKey())</option>
+                <option value="$project.getId()">$project.getName() ($project.getKey())</option>
             #end
         </select>
     </div>

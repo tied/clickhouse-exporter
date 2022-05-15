@@ -40,8 +40,13 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) {
         Collection<String> allowedTypes = (Collection<String>) configuration.getValue("issue_types");
+        String allowedProject = (String) configuration.getValue("project_code");
         Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
+
+        if (!issue.getProjectId().toString().equals(allowedProject)) {
+            return;
+        }
 
         if (!allowedTypes.contains(issue.getIssueTypeId())) {
             return;
