@@ -10,18 +10,20 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
+
 
 @Component
 public class IssueEventHandler implements InitializingBean, DisposableBean {
     private final EventPublisher eventPublisher;
     private final IssueRepository issueRepository;
+    private final PluginConfigurationAdapter configuration;
 
     @Autowired
-    public IssueEventHandler(@ComponentImport EventPublisher eventPublisher, IssueRepository issueRepository) {
+    public IssueEventHandler(@ComponentImport EventPublisher eventPublisher, IssueRepository issueRepository, PluginConfigurationAdapter configuration) {
         this.eventPublisher = eventPublisher;
         this.issueRepository = issueRepository;
+        this.configuration = configuration;
     }
 
     @Override
@@ -37,8 +39,13 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
 
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) {
-        Long eventTypeId = issueEvent.getEventTypeId(); // todo filter!!!
+        Collection<String> allowedTypes = (Collection<String>) configuration.getValue("issue_types");
+        Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
+
+        if (!allowedTypes.contains(issue.getIssueTypeId())) {
+            return;
+        }
 
         issueRepository.addEventData(issueEvent.getTime(), issue);
     }
