@@ -15,7 +15,6 @@
     <web-resource key="clickhouse-exporter-resources" name="clickhouse-exporter Web Resources">
         <dependency>com.atlassian.auiplugin:ajs</dependency>
         
-        <resource type="download" name="clickhouse-exporter.css" location="/css/clickhouse-exporter.css"/>
         <resource type="download" name="clickhouse-exporter.js" location="/js/clickhouse-exporter.js"/>
         <resource type="download" name="images/" location="/images"/>
 
