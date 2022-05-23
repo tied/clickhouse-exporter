@@ -9,21 +9,24 @@ import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.sbrf.jira.clickhouse.configuration.PluginConfiguration;
+import ru.sbrf.jira.clickhouse.configuration.PluginConfigurationRepository;
 
 import java.util.Collection;
+import java.util.List;
 
 
 @Component
 public class IssueEventHandler implements InitializingBean, DisposableBean {
     private final EventPublisher eventPublisher;
     private final IssueRepository issueRepository;
-    private final PluginConfigurationAdapter configuration;
+    private final PluginConfigurationRepository configurationRepository;
 
     @Autowired
-    public IssueEventHandler(@ComponentImport EventPublisher eventPublisher, IssueRepository issueRepository, PluginConfigurationAdapter configuration) {
+    public IssueEventHandler(@ComponentImport EventPublisher eventPublisher, IssueRepository issueRepository, PluginConfigurationRepository configurationRepository) {
         this.eventPublisher = eventPublisher;
         this.issueRepository = issueRepository;
-        this.configuration = configuration;
+        this.configurationRepository = configurationRepository;
     }
 
     @Override
@@ -39,8 +42,9 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
 
     @EventListener
     public void onIssueEvent(IssueEvent issueEvent) {
-        Collection<String> allowedTypes = (Collection<String>) configuration.getValue("issue_types");
-        String allowedProject = (String) configuration.getValue("project_code");
+        PluginConfiguration configuration = configurationRepository.get();
+        List<String> allowedTypes = configuration.getIssueTypes();
+        String allowedProject = configuration.getProjectCode();
         Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
 

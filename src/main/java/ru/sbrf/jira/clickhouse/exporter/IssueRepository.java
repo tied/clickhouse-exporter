@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import ru.sbrf.jira.clickhouse.configuration.PluginConfiguration;
+import ru.sbrf.jira.clickhouse.configuration.PluginConfigurationRepository;
 import ru.yandex.clickhouse.ClickHouseConnection;
 import ru.yandex.clickhouse.ClickHouseDataSource;
 import ru.yandex.clickhouse.ClickHouseStatement;
@@ -17,22 +19,22 @@ import java.util.Date;
 public class IssueRepository {
     private final ClickHouseDataSource dataSource;
     private final IssueFieldManager fieldManager;
-    private final PluginConfigurationAdapter configuration;
-    private final String eventsTableName;
+    private final PluginConfigurationRepository configurationRepository;
     private static final Logger logger = LoggerFactory.getLogger(IssueRepository.class);
 
     @Autowired
-    public IssueRepository(ClickHouseDataSource dataSource, IssueFieldManager fieldManager, PluginConfigurationAdapter configuration) {
+    public IssueRepository(ClickHouseDataSource dataSource, IssueFieldManager fieldManager, PluginConfigurationRepository configurationRepository) {
         this.dataSource = dataSource;
         this.fieldManager = fieldManager;
-        this.configuration = configuration;
-        eventsTableName = (String) configuration.getValue("events_table");
+        this.configurationRepository = configurationRepository;
     }
 
     public void prepareTable() {
+        PluginConfiguration configuration = configurationRepository.get();
+
         try (ClickHouseConnection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            try (ResultSet resultSet = metaData.getTables(null, connection.getSchema(), eventsTableName, null)) {
+            try (ResultSet resultSet = metaData.getTables(null, connection.getSchema(), configuration.getEventsTableName(), null)) {
                 if (!resultSet.next()) {
                     createTableWithColumns(connection, getFields());
                 } else {
@@ -47,8 +49,9 @@ public class IssueRepository {
     private void updateTableColumns(ClickHouseConnection connection, Collection<String> columns) throws SQLException {
         DatabaseMetaData metadata = connection.getMetaData();
         Map<String, String> existingColumns = new HashMap<>();
+        PluginConfiguration configuration = configurationRepository.get();
 
-        try (ResultSet resultSet = metadata.getColumns(null, connection.getSchema(), eventsTableName, null)) {
+        try (ResultSet resultSet = metadata.getColumns(null, connection.getSchema(), configuration.getEventsTableName(), null)) {
             while (resultSet.next()) {
                 String columnName = resultSet.getString("COLUMN_NAME");
                 String typeName = resultSet.getString("TYPE_NAME");
@@ -71,13 +74,13 @@ public class IssueRepository {
                     }
                 }
 
-                String sql = String.format("ALTER TABLE %s ADD COLUMN %s %s;", eventsTableName, column, type);
+                String sql = String.format("ALTER TABLE %s ADD COLUMN %s %s;", configuration.getEventsTableName(), column, type);
                 try (ClickHouseStatement statement = connection.createStatement()) {
                     logger.debug("Executing sql {}", sql);
                     statement.execute(sql);
                 }
             } else if (!type.equalsIgnoreCase(fieldManager.getFieldType(column))) {
-                String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", eventsTableName, column, type);
+                String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", configuration.getEventsTableName(), column, type);
                 try (ClickHouseStatement statement = connection.createStatement()) {
                     logger.debug("Executing sql {}", sql);
                     statement.execute(sql);
@@ -87,8 +90,10 @@ public class IssueRepository {
     }
 
     private void createTableWithColumns(ClickHouseConnection connection, Collection<String> columns) throws SQLException {
+        PluginConfiguration configuration = configurationRepository.get();
+
         StringBuilder sql = new StringBuilder("CREATE TABLE ");
-        sql.append(eventsTableName);
+        sql.append(configuration.getEventsTableName());
         sql.append('(');
 
         for (String column : columns) {
@@ -123,8 +128,9 @@ public class IssueRepository {
     }
 
     public void addEventData(Date time, Issue issue) {
+        PluginConfiguration configuration = configurationRepository.get();
         StringBuilder sql = new StringBuilder("INSERT INTO ");
-        sql.append(eventsTableName);
+        sql.append(configuration.getEventsTableName());
         sql.append(' ');
 
         sql.append('(');
@@ -165,9 +171,9 @@ public class IssueRepository {
         allowedFields.add("event_id");
         allowedFields.add("issue_id");
         allowedFields.add("timestamp");
-        Object fieldsValue = configuration.getValue("issue_fields");
+        List<String> fieldsValue = configurationRepository.get().getIssueFields();
         if (fieldsValue != null) {
-            allowedFields.addAll((Collection<String>) fieldsValue);
+            allowedFields.addAll(fieldsValue);
         }
 
         Set<String> fields = new LinkedHashSet<>();
