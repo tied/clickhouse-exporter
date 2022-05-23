@@ -1,8 +1,6 @@
 package ru.sbrf.jira.clickhouse.exporter;
 
 import com.atlassian.jira.issue.Issue;
-import com.google.common.base.Strings;
-import org.apache.commons.lang.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,7 +18,7 @@ public class IssueRepository {
     private final ClickHouseDataSource dataSource;
     private final IssueFieldManager fieldManager;
     private final PluginConfigurationAdapter configuration;
-    private final String TABLE_NAME = "jira_events";
+    private final String eventsTableName;
     private static final Logger logger = LoggerFactory.getLogger(IssueRepository.class);
 
     @Autowired
@@ -28,12 +26,13 @@ public class IssueRepository {
         this.dataSource = dataSource;
         this.fieldManager = fieldManager;
         this.configuration = configuration;
+        eventsTableName = (String) configuration.getValue("events_table");
     }
 
     public void prepareTable() {
         try (ClickHouseConnection connection = dataSource.getConnection()) {
             DatabaseMetaData metaData = connection.getMetaData();
-            try (ResultSet resultSet = metaData.getTables(null, null, TABLE_NAME, null)) {
+            try (ResultSet resultSet = metaData.getTables(null, connection.getSchema(), eventsTableName, null)) {
                 if (!resultSet.next()) {
                     createTableWithColumns(connection, getFields());
                 } else {
@@ -49,7 +48,7 @@ public class IssueRepository {
         DatabaseMetaData metadata = connection.getMetaData();
         Map<String, String> existingColumns = new HashMap<>();
 
-        try (ResultSet resultSet = metadata.getColumns(null, null, TABLE_NAME, null)) {
+        try (ResultSet resultSet = metadata.getColumns(null, connection.getSchema(), eventsTableName, null)) {
             while (resultSet.next()) {
                 String columnName = resultSet.getString("COLUMN_NAME");
                 String typeName = resultSet.getString("TYPE_NAME");
@@ -72,13 +71,13 @@ public class IssueRepository {
                     }
                 }
 
-                String sql = String.format("ALTER TABLE %s ADD COLUMN %s %s;", TABLE_NAME, column, type);
+                String sql = String.format("ALTER TABLE %s ADD COLUMN %s %s;", eventsTableName, column, type);
                 try (ClickHouseStatement statement = connection.createStatement()) {
                     logger.debug("Executing sql {}", sql);
                     statement.execute(sql);
                 }
             } else if (!type.equalsIgnoreCase(fieldManager.getFieldType(column))) {
-                String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", TABLE_NAME, column, type);
+                String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", eventsTableName, column, type);
                 try (ClickHouseStatement statement = connection.createStatement()) {
                     logger.debug("Executing sql {}", sql);
                     statement.execute(sql);
@@ -89,7 +88,7 @@ public class IssueRepository {
 
     private void createTableWithColumns(ClickHouseConnection connection, Collection<String> columns) throws SQLException {
         StringBuilder sql = new StringBuilder("CREATE TABLE ");
-        sql.append(TABLE_NAME);
+        sql.append(eventsTableName);
         sql.append('(');
 
         for (String column : columns) {
@@ -125,7 +124,7 @@ public class IssueRepository {
 
     public void addEventData(Date time, Issue issue) {
         StringBuilder sql = new StringBuilder("INSERT INTO ");
-        sql.append(TABLE_NAME);
+        sql.append(eventsTableName);
         sql.append(' ');
 
         sql.append('(');

@@ -11,6 +11,10 @@
         <input type="text" id="jdbc_url" name="jdbc_url" class="text">
     </div>
     <div class="field-group">
+        <label for="events_table">$i18n.getText("clickhouse-exporter.admin.events_table.label")</label>
+        <input type="text" id="events_table" name="events_table" class="text">
+    </div>
+    <div class="field-group">
         <label for="project_code">$i18n.getText("clickhouse-exporter.admin.project_code.label")</label>
         <select id="project_code" name="project_code">
             <option value="">$i18n.getText("clickhouse-exporter.admin.project_code.not_selected")</option>

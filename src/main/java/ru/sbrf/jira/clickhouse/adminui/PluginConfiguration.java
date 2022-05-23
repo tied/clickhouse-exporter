@@ -48,6 +48,8 @@ public class PluginConfiguration {
     public static final class Config {
         @XmlElement(name = "jdbc_url")
         private String dbUrl;
+        @XmlElement(name = "events_table")
+        private String eventsTableName;
         @XmlElement(name = "project_code")
         private String projectCode;
         @XmlElement(name = "issue_types")
@@ -86,6 +88,14 @@ public class PluginConfiguration {
         public void setIssueFields(List<String> issueFields) {
             this.issueFields = issueFields;
         }
+
+        public String getEventsTableName() {
+            return eventsTableName;
+        }
+
+        public void setEventsTableName(String eventsTableName) {
+            this.eventsTableName = eventsTableName;
+        }
     }
 
     @GET
@@ -101,6 +111,7 @@ public class PluginConfiguration {
             Config config = new Config();
 
             config.setDbUrl((String) settings.get(configPrefix + ".jdbc_url"));
+            config.setEventsTableName((String) settings.get(configPrefix + ".events_table"));
             config.setProjectCode((String) settings.get(configPrefix + ".project_code"));
             config.setIssueTypes((List) settings.get(configPrefix + ".issue_types"));
             config.setIssueFields((List) settings.get(configPrefix + ".issue_fields"));
@@ -120,6 +131,7 @@ public class PluginConfiguration {
         transactionTemplate.execute(() -> {
             PluginSettings pluginSettings = pluginSettingsFactory.createGlobalSettings();
             pluginSettings.put(configPrefix + ".jdbc_url", config.getDbUrl());
+            pluginSettings.put(configPrefix + ".events_table", config.getEventsTableName());
             pluginSettings.put(configPrefix + ".project_code", config.getProjectCode());
             pluginSettings.put(configPrefix + ".issue_types", config.getIssueTypes());
             pluginSettings.put(configPrefix + ".issue_fields", config.getIssueFields());
