@@ -45,7 +45,6 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
         PluginConfiguration configuration = configurationRepository.get();
         List<String> allowedTypes = configuration.getIssueTypes();
         String allowedProject = configuration.getProjectCode();
-        Long eventTypeId = issueEvent.getEventTypeId();
         Issue issue = issueEvent.getIssue();
 
         if (!issue.getProjectId().toString().equals(allowedProject)) {
@@ -56,7 +55,7 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
             return;
         }
 
-        issueRepository.addEventData(issueEvent.getTime(), issue);
+        issueRepository.addEventData(issueEvent);
     }
 
 }

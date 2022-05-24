@@ -15,8 +15,8 @@
             $("#jdbc_url").val(config.jdbc_url);
             $("#events_table").val(config.events_table);
             $("#project_code").val(config.project_code);
-            $("input[name='issue_types']").map((i, e) => e.checked = config.issue_types.includes(e.value));
-            $("input[name='issue_fields']").map((i, e) => e.checked = config.issue_fields.includes(e.value));
+            $("input[name='issue_types']").map((i, e) =>  e.checked = config.issue_types.includes(e.value));
+            $("input[name='issue_fields']").map((i, e) => !e.disabled && (e.checked = config.issue_fields.includes(e.value)));
         });
 
         function updateConfig() {

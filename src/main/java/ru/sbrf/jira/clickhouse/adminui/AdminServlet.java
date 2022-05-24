@@ -10,9 +10,7 @@ import com.atlassian.sal.api.user.UserManager;
 import com.atlassian.templaterenderer.TemplateRenderer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import ru.sbrf.jira.clickhouse.exporter.IssueField;
-import ru.sbrf.jira.clickhouse.exporter.IssueFieldManager;
-import ru.sbrf.jira.clickhouse.exporter.SystemFieldType;
+import ru.sbrf.jira.clickhouse.jirautil.IssueEventFieldFactory;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -29,16 +27,16 @@ public class AdminServlet extends HttpServlet {
     private final TemplateRenderer renderer;
     private final ProjectManager projectManager;
     private final ConstantsManager constantsManager;
-    private final IssueFieldManager fieldManager;
+    private final IssueEventFieldFactory fieldFactory;
 
     @Autowired
-    public AdminServlet(@ComponentImport UserManager userManager, @ComponentImport LoginUriProvider loginUriProvider, @ComponentImport TemplateRenderer renderer, @ComponentImport ProjectManager projectManager, @ComponentImport ConstantsManager constantsManager, IssueFieldManager fieldManager) {
+    public AdminServlet(@ComponentImport UserManager userManager, @ComponentImport LoginUriProvider loginUriProvider, @ComponentImport TemplateRenderer renderer, @ComponentImport ProjectManager projectManager, @ComponentImport ConstantsManager constantsManager, IssueEventFieldFactory fieldFactory) {
         this.userManager = userManager;
         this.loginUriProvider = loginUriProvider;
         this.renderer = renderer;
         this.projectManager = projectManager;
         this.constantsManager = constantsManager;
-        this.fieldManager = fieldManager;
+        this.fieldFactory = fieldFactory;
     }
 
     @Override
@@ -56,20 +54,7 @@ public class AdminServlet extends HttpServlet {
 
         Collection<IssueType> issueTypes = constantsManager.getAllIssueTypeObjects();
         context.put("issue_types", issueTypes);
-
-        List<IssueField> issueFields = new ArrayList<>();
-        for (String id : fieldManager.getAllIssueFields()) {
-            if (fieldManager.isSystemField(id)) {
-                SystemFieldType fieldType = SystemFieldType.getTypeByKey(id);
-                if (fieldType == null) {
-                    continue;
-                }
-            }
-
-            String name = fieldManager.getFieldName(id);
-            issueFields.add(new IssueField(id, name));
-        }
-        context.put("issue_fields", issueFields);
+        context.put("issue_fields", fieldFactory.getFields());
 
         response.setContentType("text/html;charset=utf-8");
         renderer.render("admin.vm", context, response.getWriter());

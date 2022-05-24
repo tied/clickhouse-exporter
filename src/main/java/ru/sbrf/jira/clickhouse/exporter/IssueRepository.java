@@ -1,5 +1,6 @@
 package ru.sbrf.jira.clickhouse.exporter;
 
+import com.atlassian.jira.event.issue.IssueEvent;
 import com.atlassian.jira.issue.Issue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -7,6 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import ru.sbrf.jira.clickhouse.configuration.PluginConfiguration;
 import ru.sbrf.jira.clickhouse.configuration.PluginConfigurationRepository;
+import ru.sbrf.jira.clickhouse.jirautil.IssueEventField;
+import ru.sbrf.jira.clickhouse.jirautil.IssueEventFieldFactory;
 import ru.yandex.clickhouse.ClickHouseConnection;
 import ru.yandex.clickhouse.ClickHouseDataSource;
 import ru.yandex.clickhouse.ClickHouseStatement;
@@ -14,18 +17,19 @@ import ru.yandex.clickhouse.ClickHouseStatement;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Component
 public class IssueRepository {
     private final ClickHouseDataSource dataSource;
-    private final IssueFieldManager fieldManager;
+    private final IssueEventFieldFactory fieldFactory;
     private final PluginConfigurationRepository configurationRepository;
     private static final Logger logger = LoggerFactory.getLogger(IssueRepository.class);
 
     @Autowired
-    public IssueRepository(ClickHouseDataSource dataSource, IssueFieldManager fieldManager, PluginConfigurationRepository configurationRepository) {
+    public IssueRepository(ClickHouseDataSource dataSource, IssueEventFieldFactory fieldFactory, PluginConfigurationRepository configurationRepository) {
         this.dataSource = dataSource;
-        this.fieldManager = fieldManager;
+        this.fieldFactory = fieldFactory;
         this.configurationRepository = configurationRepository;
     }
 
@@ -60,18 +64,11 @@ public class IssueRepository {
         }
 
         for (String column : columns) {
-            String type;
-            type = existingColumns.get(column);
+            String type = existingColumns.get(column);
             if (type == null) {
-                if ("timestamp".equals(column)) {
-                    type = "TimeStamp";
-                } else if ("event_id".equals(column)) {
-                    type = "UUID";
-                } else {
-                    type = fieldManager.getFieldType(column);
-                    if (type == null) {
-                        continue;
-                    }
+                type = getFieldType(column);
+                if (type == null) {
+                    continue;
                 }
 
                 String sql = String.format("ALTER TABLE %s ADD COLUMN %s %s;", configuration.getEventsTableName(), column, type);
@@ -79,7 +76,7 @@ public class IssueRepository {
                     logger.debug("Executing sql {}", sql);
                     statement.execute(sql);
                 }
-            } else if (!type.equalsIgnoreCase(fieldManager.getFieldType(column))) {
+            } else if (!type.equalsIgnoreCase(getFieldType(column))) {
                 String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", configuration.getEventsTableName(), column, type);
                 try (ClickHouseStatement statement = connection.createStatement()) {
                     logger.debug("Executing sql {}", sql);
@@ -97,16 +94,9 @@ public class IssueRepository {
         sql.append('(');
 
         for (String column : columns) {
-            String type;
-            if ("timestamp".equals(column)) {
-                type = "TimeStamp";
-            } else if ("event_id".equals(column)) {
-                type = "UUID";
-            } else {
-                type = fieldManager.getFieldType(column);
-                if (type == null) {
-                    continue;
-                }
+            String type = getFieldType(column);
+            if (type == null) {
+                continue;
             }
 
             sql.append(column);
@@ -127,7 +117,8 @@ public class IssueRepository {
         }
     }
 
-    public void addEventData(Date time, Issue issue) {
+    public void addEventData(IssueEvent issueEvent) {
+        List<IssueEventField> eventFields = fieldFactory.getFields();
         PluginConfiguration configuration = configurationRepository.get();
         StringBuilder sql = new StringBuilder("INSERT INTO ");
         sql.append(configuration.getEventsTableName());
@@ -149,14 +140,14 @@ public class IssueRepository {
              PreparedStatement statement = connection.prepareStatement(sql.toString())) {
             for (int i = 0; i < fields.size(); i++) {
                 String field = fields.get(i);
-                Object value;
-                if ("timestamp".equals(field)) {
-                    value = new Timestamp(time.getTime());
-                } else if ("event_id".equals(field)) {
-                    value = UUID.randomUUID();
-                } else {
-                    value = fieldManager.getFieldValue(issue, field);
+
+                Object value = null;
+                for (IssueEventField eventField : eventFields) {
+                    if (eventField.getId().equals(field)) {
+                        value = eventField.getValueGetter().apply(issueEvent);
+                    }
                 }
+
                 statement.setObject(i + 1, value);
             }
 
@@ -180,8 +171,19 @@ public class IssueRepository {
         fields.add("event_id");
         fields.add("issue_id");
         fields.add("timestamp");
-        fields.addAll(fieldManager.getAllIssueFields());
+        fields.addAll(fieldFactory.getFields().stream().map(IssueEventField::getId).collect(Collectors.toList()));
         fields.retainAll(allowedFields);
         return new ArrayList<>(fields);
+    }
+
+    private String getFieldType(String column) {
+        List<IssueEventField> fields = fieldFactory.getFields();
+        for (IssueEventField field : fields) {
+            if (field.getId().equals(column)) {
+                return field.getDbType();
+            }
+        }
+
+        return null;
     }
 }

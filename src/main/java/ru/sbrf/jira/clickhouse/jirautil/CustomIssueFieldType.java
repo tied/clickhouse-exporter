@@ -1,6 +1,6 @@
-package ru.sbrf.jira.clickhouse.exporter;
+package ru.sbrf.jira.clickhouse.jirautil;
 
-public enum CustomFieldType {
+public enum CustomIssueFieldType {
     CASCADING_SELECT("com.atlassian.jira.plugin.system.customfieldtypes:cascadingselect", "String"),
     DATE_PICKER("com.atlassian.jira.plugin.system.customfieldtypes:datepicker", "DateTime"),
     DATE_TIME("com.atlassian.jira.plugin.system.customfieldtypes:datetime", "DateTime"),
@@ -26,13 +26,13 @@ public enum CustomFieldType {
     private final String key;
     private final String clickhouseType;
 
-    CustomFieldType(final String key, String clickhouseType) {
+    CustomIssueFieldType(final String key, String clickhouseType) {
         this.key = key;
         this.clickhouseType = clickhouseType;
     }
 
-    public static CustomFieldType getTypeByKey(String key) {
-        for (CustomFieldType type : values()) {
+    public static CustomIssueFieldType getTypeByKey(String key) {
+        for (CustomIssueFieldType type : values()) {
             if (type.key.equals(key)) {
                 return type;
             }
