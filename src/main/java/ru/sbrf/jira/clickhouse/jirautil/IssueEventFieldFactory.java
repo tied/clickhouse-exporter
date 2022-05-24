@@ -57,7 +57,7 @@ public class IssueEventFieldFactory {
         fields.add(new IssueEventField("environment", getSystemFieldName("environment"), (IssueEvent event) -> event.getIssue().getEnvironment(), false, "String"));
         fields.add(new IssueEventField("description", getSystemFieldName("description"), (IssueEvent event) -> event.getIssue().getDescription(), false, "String"));
         fields.add(new IssueEventField("security", getSystemFieldName("security"), (IssueEvent event) -> event.getIssue().getSecurityLevelId(), false, "Int64"));
-        fields.add(new IssueEventField("labels", getSystemFieldName("labels"), (IssueEvent event) -> event.getIssue().getLabels().stream().map(Label::getId).collect(Collectors.toList()), false, "Array(Int64)"));
+        fields.add(new IssueEventField("labels", getSystemFieldName("labels"), (IssueEvent event) -> event.getIssue().getLabels().stream().map(Label::getLabel).collect(Collectors.toList()), false, "Array(String)"));
 
         // Пользовательские поля
         for (Field field : fieldManager.getAllSearchableFields()) {

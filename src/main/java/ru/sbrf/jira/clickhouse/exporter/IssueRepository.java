@@ -76,11 +76,14 @@ public class IssueRepository {
                     logger.debug("Executing sql {}", sql);
                     statement.execute(sql);
                 }
-            } else if (!type.equalsIgnoreCase(getFieldType(column))) {
-                String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", configuration.getEventsTableName(), column, type);
-                try (ClickHouseStatement statement = connection.createStatement()) {
-                    logger.debug("Executing sql {}", sql);
-                    statement.execute(sql);
+            } else {
+                String fieldType = getFieldType(column);
+                if (!type.equalsIgnoreCase(fieldType)) {
+                    String sql = String.format("ALTER TABLE %s ALTER COLUMN %s TYPE %s;", configuration.getEventsTableName(), column, fieldType);
+                    try (ClickHouseStatement statement = connection.createStatement()) {
+                        logger.debug("Executing sql {}", sql);
+                        statement.execute(sql);
+                    }
                 }
             }
         }
