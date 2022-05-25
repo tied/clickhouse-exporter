@@ -33,7 +33,7 @@ public class IssueEventFieldFactory {
         List<IssueEventField> fields = new ArrayList<>();
 
         // Обязательные поля
-        fields.add(new IssueEventField("event_id", "Идентификатор события", (IssueEvent event) -> event.getChangeLog().get("id"), true, "Int64"));
+        fields.add(new IssueEventField("event_id", "Идентификатор события", (IssueEvent event) -> UUID.randomUUID(), true, "UUID"));
         fields.add(new IssueEventField("timestamp", "Время события", (IssueEvent event) -> new Timestamp(event.getTime().getTime()), true, "DateTime"));
         fields.add(new IssueEventField("issue_id", "Ключ Issue", (IssueEvent event) -> event.getIssue().getKey(), true, "String"));
 
