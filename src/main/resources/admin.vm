@@ -47,6 +47,10 @@
         #end
     </div>
     <div class="field-group">
+        <label for="events_table">$i18n.getText("clickhouse-exporter.admin.old_date.label")</label>
+        <input type="date" id="old_date" name="old_date">
+    </div>
+    <div class="field-group">
         <input type="submit" value="$i18n.getText("clickhouse-exporter.admin.save.label")" class="button">
     </div>
 </form>

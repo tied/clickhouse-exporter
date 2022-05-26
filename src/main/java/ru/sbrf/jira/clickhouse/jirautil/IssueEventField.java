@@ -1,10 +1,6 @@
 package ru.sbrf.jira.clickhouse.jirautil;
 
 
-import com.atlassian.jira.event.issue.IssueEvent;
-
-import java.util.function.Function;
-
 /**
  * Класс, предстваляющий поле события
  */
@@ -20,7 +16,7 @@ public class IssueEventField {
     /**
      * Метод для получения значения поля из события
      */
-    private final Function<IssueEvent, Object> valueGetter;
+    private final IssueValueGetter valueGetter;
     /**
      * Можно ли выключить запись поля в базу
      */
@@ -30,7 +26,7 @@ public class IssueEventField {
      */
     private final String dbType;
 
-    public IssueEventField(String id, String name, Function<IssueEvent, Object> valueGetter, boolean isRequired, String dbType) {
+    public IssueEventField(String id, String name, IssueValueGetter valueGetter, boolean isRequired, String dbType) {
         this.id = id;
         this.name = name;
         this.valueGetter = valueGetter;
@@ -46,7 +42,7 @@ public class IssueEventField {
         return name;
     }
 
-    public Function<IssueEvent, Object> getValueGetter() {
+    public IssueValueGetter getValueGetter() {
         return valueGetter;
     }
 

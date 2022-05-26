@@ -22,6 +22,8 @@ public class PluginConfiguration {
     private List<String> issueTypes;
     @XmlElement(name = "issue_fields")
     private List<String> issueFields;
+    @XmlElement(name = "old_date")
+    private String oldDate;
 
     public String getDbUrl() {
         return dbUrl;
@@ -41,5 +43,9 @@ public class PluginConfiguration {
 
     public List<String> getIssueFields() {
         return issueFields;
+    }
+
+    public String getOldDate() {
+        return oldDate;
     }
 }

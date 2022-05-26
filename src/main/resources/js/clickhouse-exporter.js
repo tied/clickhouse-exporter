@@ -15,6 +15,7 @@
             $("#jdbc_url").val(config.jdbc_url);
             $("#events_table").val(config.events_table);
             $("#project_code").val(config.project_code);
+            $("#old_date").val(config.old_date);
             $("input[name='issue_types']").map((i, e) =>  e.checked = config.issue_types.includes(e.value));
             $("input[name='issue_fields']").map((i, e) => !e.disabled && (e.checked = config.issue_fields.includes(e.value)));
         });
@@ -28,6 +29,7 @@
                     jdbc_url: $("#jdbc_url").val(),
                     events_table: $("#events_table").val(),
                     project_code: $("#project_code").val(),
+                    old_date: $("#old_date").val(),
                     issue_types: $("input[name='issue_types']:checked").map((i, e) => e.value).get(),
                     issue_fields: $("input[name='issue_fields']:checked").map((i, e) => e.value).get()
                 }),

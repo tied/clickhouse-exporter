@@ -1,7 +1,5 @@
 package ru.sbrf.jira.clickhouse.exporter;
 
-import com.atlassian.jira.event.issue.IssueEvent;
-import com.atlassian.jira.issue.Issue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,8 +14,6 @@ import ru.yandex.clickhouse.ClickHouseStatement;
 
 import java.sql.*;
 import java.util.*;
-import java.util.Date;
-import java.util.stream.Collectors;
 
 @Component
 public class IssueRepository {
@@ -40,9 +36,9 @@ public class IssueRepository {
             DatabaseMetaData metaData = connection.getMetaData();
             try (ResultSet resultSet = metaData.getTables(null, connection.getSchema(), configuration.getEventsTableName(), null)) {
                 if (!resultSet.next()) {
-                    createTableWithColumns(connection, getFields());
+                    createTableWithColumns(connection, configuration.getIssueFields());
                 } else {
-                    updateTableColumns(connection, getFields());
+                    updateTableColumns(connection, configuration.getIssueFields());
                 }
             }
         } catch (SQLException e) {
@@ -120,15 +116,14 @@ public class IssueRepository {
         }
     }
 
-    public void addEventData(IssueEvent issueEvent) {
-        List<IssueEventField> eventFields = fieldFactory.getFields();
+    public void addEventData(Map<String, Object> eventData) {
         PluginConfiguration configuration = configurationRepository.get();
         StringBuilder sql = new StringBuilder("INSERT INTO ");
         sql.append(configuration.getEventsTableName());
         sql.append(' ');
 
         sql.append('(');
-        List<String> fields = getFields();
+        List<String> fields = configuration.getIssueFields();
         sql.append(String.join(",", fields));
         sql.append(')');
 
@@ -143,15 +138,7 @@ public class IssueRepository {
              PreparedStatement statement = connection.prepareStatement(sql.toString())) {
             for (int i = 0; i < fields.size(); i++) {
                 String field = fields.get(i);
-
-                Object value = null;
-                for (IssueEventField eventField : eventFields) {
-                    if (eventField.getId().equals(field)) {
-                        value = eventField.getValueGetter().apply(issueEvent);
-                    }
-                }
-
-                statement.setObject(i + 1, value);
+                statement.setObject(i + 1, eventData.get(field));
             }
 
             statement.execute();
@@ -160,23 +147,25 @@ public class IssueRepository {
         }
     }
 
-    private List<String> getFields() {
-        Set<String> allowedFields = new HashSet<>();
-        allowedFields.add("event_id");
-        allowedFields.add("issue_id");
-        allowedFields.add("timestamp");
-        List<String> fieldsValue = configurationRepository.get().getIssueFields();
-        if (fieldsValue != null) {
-            allowedFields.addAll(fieldsValue);
+    public Timestamp getEarliestEditDateForIssue(String issueKey) {
+        PluginConfiguration configuration = configurationRepository.get();
+
+        String sql = String.format("SELECT timestamp FROM %s WHERE issue_id = ? ORDER BY timestamp LIMIT 1", configuration.getEventsTableName());
+
+        try (ClickHouseConnection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+
+            statement.setString(1, issueKey);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getTimestamp(1);
+                }
+            }
+        } catch (SQLException e) {
+            logger.error("SQL error: {}", e.getMessage());
         }
 
-        Set<String> fields = new LinkedHashSet<>();
-        fields.add("event_id");
-        fields.add("issue_id");
-        fields.add("timestamp");
-        fields.addAll(fieldFactory.getFields().stream().map(IssueEventField::getId).collect(Collectors.toList()));
-        fields.retainAll(allowedFields);
-        return new ArrayList<>(fields);
+        return null;
     }
 
     private String getFieldType(String column) {

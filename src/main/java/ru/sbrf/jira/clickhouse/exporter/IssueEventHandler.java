@@ -12,7 +12,6 @@ import org.springframework.stereotype.Component;
 import ru.sbrf.jira.clickhouse.configuration.PluginConfiguration;
 import ru.sbrf.jira.clickhouse.configuration.PluginConfigurationRepository;
 
-import java.util.Collection;
 import java.util.List;
 
 
@@ -21,18 +20,19 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
     private final EventPublisher eventPublisher;
     private final IssueRepository issueRepository;
     private final PluginConfigurationRepository configurationRepository;
+    private final EventDataConverter eventDataConverter;
 
     @Autowired
-    public IssueEventHandler(@ComponentImport EventPublisher eventPublisher, IssueRepository issueRepository, PluginConfigurationRepository configurationRepository) {
+    public IssueEventHandler(@ComponentImport EventPublisher eventPublisher, IssueRepository issueRepository, PluginConfigurationRepository configurationRepository, DataBaseInitializer dataBaseInitializer, EventDataConverter eventDataConverter) {
         this.eventPublisher = eventPublisher;
         this.issueRepository = issueRepository;
         this.configurationRepository = configurationRepository;
+        this.eventDataConverter = eventDataConverter;
     }
 
     @Override
     public void afterPropertiesSet() {
         eventPublisher.register(this);
-        issueRepository.prepareTable();
     }
 
     @Override
@@ -55,7 +55,7 @@ public class IssueEventHandler implements InitializingBean, DisposableBean {
             return;
         }
 
-        issueRepository.addEventData(issueEvent);
+        issueRepository.addEventData(eventDataConverter.convert(issueEvent));
     }
 
 }
