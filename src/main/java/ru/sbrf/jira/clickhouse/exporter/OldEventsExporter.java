@@ -80,7 +80,7 @@ public class OldEventsExporter implements InitializingBean {
             }
 
             Timestamp created = issue.getCreated();
-            if (created.before(earliest)) {
+            if (created.before(earliest) && created.after(since)) {
                 issueData.put("event_id", UUID.randomUUID());
                 issueData.put("timestamp", created);
                 issueRepository.addEventData(issueData);
