@@ -42,7 +42,6 @@ public class OldEventsExporter implements InitializingBean {
 
     private void exportOldEvents() throws GenericEntityException {
         PluginConfiguration configuration = configurationRepository.get();
-        //System.out.println(Timestamp.valueOf(configurationRepository.get().getOldDate() + " 00:00:00"));
         Long projectCode = Long.valueOf(configuration.getProjectCode());
         for (Long issueId : issueManager.getIssueIdsForProject(projectCode)) {
             Issue issue = issueManager.getIssueObject(issueId);
@@ -63,20 +62,28 @@ public class OldEventsExporter implements InitializingBean {
             }
 
             Map<String, Object> issueData = eventDataConverter.convert(issue);
+
             for (ChangeHistory changeHistory : appliedHistories) {
-                for (GenericValue changeItem : changeHistory.getChangeItems()) {
-                    String field = (String) changeItem.get("field");
-                    String oldString = (String) changeItem.get("oldstring");
-
-                    issueData.put(field, oldString);
-                }
-
                 Timestamp current = changeHistory.getTimePerformed();
                 if (current.before(earliest)) {
                     issueData.put("event_id", UUID.randomUUID());
                     issueData.put("timestamp", current);
                     issueRepository.addEventData(issueData);
                 }
+
+                for (GenericValue changeItem : changeHistory.getChangeItems()) {
+                    String field = (String) changeItem.get("field");
+                    String oldString = (String) changeItem.get("oldstring");
+
+                    issueData.put(field, oldString);
+                }
+            }
+
+            Timestamp created = issue.getCreated();
+            if (created.before(earliest)) {
+                issueData.put("event_id", UUID.randomUUID());
+                issueData.put("timestamp", created);
+                issueRepository.addEventData(issueData);
             }
         }
     }

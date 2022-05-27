@@ -47,14 +47,14 @@ public class IssueEventFieldFactory {
         fields.add(new IssueEventField("created", getSystemFieldName("created"), Issue::getCreated, false, "DateTime"));
         fields.add(new IssueEventField("updated", getSystemFieldName("updated"), Issue::getUpdated, false, "DateTime"));
         fields.add(new IssueEventField("resolutiondate", getSystemFieldName("resolutiondate"), Issue::getResolutionDate, false, "DateTime"));
-        fields.add(new IssueEventField("versions", getSystemFieldName("versions"), (Issue issue) -> issue.getAffectedVersions().stream().map(Version::getName).collect(Collectors.toList()), false, "Array(String)"));
-        fields.add(new IssueEventField("fixVersions", getSystemFieldName("fixVersions"), (Issue issue) -> issue.getFixVersions().stream().map(Version::getName).collect(Collectors.toList()), false, "Array(String)"));
-        fields.add(new IssueEventField("components", getSystemFieldName("components"), (Issue issue) -> issue.getComponents().stream().map(ProjectComponent::getName).collect(Collectors.toList()), false, "Array(String)"));
+        fields.add(new IssueEventField("versions", getSystemFieldName("versions"), (Issue issue) -> issue.getAffectedVersions().stream().map(Version::getName).collect(Collectors.joining(",")), false, "String"));
+        fields.add(new IssueEventField("fixVersions", getSystemFieldName("fixVersions"), (Issue issue) -> issue.getFixVersions().stream().map(Version::getName).collect(Collectors.joining(",")), false, "String"));
+        fields.add(new IssueEventField("components", getSystemFieldName("components"), (Issue issue) -> issue.getComponents().stream().map(ProjectComponent::getName).collect(Collectors.joining(",")), false, "String"));
         fields.add(new IssueEventField("duedate", getSystemFieldName("duedate"), Issue::getDueDate,false, "DateTime"));
         fields.add(new IssueEventField("environment", getSystemFieldName("environment"), Issue::getEnvironment, false, "String"));
         fields.add(new IssueEventField("description", getSystemFieldName("description"), Issue::getDescription, false, "String"));
         fields.add(new IssueEventField("security", getSystemFieldName("security"), Issue::getSecurityLevelId, false, "Int64"));
-        fields.add(new IssueEventField("labels", getSystemFieldName("labels"), (Issue issue) -> issue.getLabels().stream().map(Label::getLabel).collect(Collectors.toList()), false, "Array(String)"));
+        fields.add(new IssueEventField("labels", getSystemFieldName("labels"), (Issue issue) -> issue.getLabels().stream().map(Label::getLabel).collect(Collectors.joining(",")), false, "String"));
 
         // Пользовательские поля
         for (Field field : fieldManager.getAllSearchableFields()) {
