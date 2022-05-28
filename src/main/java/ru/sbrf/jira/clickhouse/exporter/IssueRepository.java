@@ -20,6 +20,7 @@ public class IssueRepository {
     private final ClickHouseDataSource dataSource;
     private final IssueEventFieldFactory fieldFactory;
     private final PluginConfigurationRepository configurationRepository;
+    private final List<Map<String, Object>> storedEventData = new ArrayList<>();
     private static final Logger logger = LoggerFactory.getLogger(IssueRepository.class);
 
     @Autowired
@@ -117,6 +118,35 @@ public class IssueRepository {
     }
 
     public void addEventData(Map<String, Object> eventData) {
+        boolean schedule;
+
+        synchronized (storedEventData) {
+            schedule = storedEventData.isEmpty();
+            storedEventData.add(new HashMap<>(eventData));
+        }
+
+        if (schedule) {
+            TimerTask task = new TimerTask() {
+                @Override
+                public void run() {
+                    flushEventData();
+                }
+            };
+
+            new Timer().schedule(task, 5000);
+            logger.info("Scheduled event flush");
+        }
+    }
+
+    private void flushEventData() {
+        logger.info("Flushing events");
+
+        List<Map<String, Object>> flushedData;
+        synchronized (storedEventData) {
+            flushedData = new ArrayList<>(storedEventData);
+            storedEventData.clear();
+        }
+
         PluginConfiguration configuration = configurationRepository.get();
         StringBuilder sql = new StringBuilder("INSERT INTO ");
         sql.append(configuration.getEventsTableName());
@@ -127,18 +157,19 @@ public class IssueRepository {
         sql.append(String.join(",", fields));
         sql.append(')');
 
-        sql.append(" VALUES (");
-        String[] questions = new String[fields.size()];
-        Arrays.fill(questions, "?");
-        sql.append(String.join(",", questions));
-        sql.append(')');
+        sql.append(" VALUES ");
+        String valueString = "(" + repeatStringAndJoin("?", ",", fields.size()) + ")";
+        sql.append(repeatStringAndJoin(valueString, ",", flushedData.size()));
         sql.append(';');
 
         try (ClickHouseConnection connection = dataSource.getConnection();
              PreparedStatement statement = connection.prepareStatement(sql.toString())) {
-            for (int i = 0; i < fields.size(); i++) {
-                String field = fields.get(i);
-                statement.setObject(i + 1, eventData.get(field));
+            for (int i = 0; i < flushedData.size(); i++) {
+                Map<String, Object> eventData = flushedData.get(i);
+                for (int j = 0; j < fields.size(); j++) {
+                    String field = fields.get(j);
+                    statement.setObject(i * fields.size() + j + 1, eventData.get(field));
+                }
             }
 
             statement.execute();
@@ -177,5 +208,11 @@ public class IssueRepository {
         }
 
         return null;
+    }
+
+    private static String repeatStringAndJoin(String repeated, String delimiter, int count) {
+        String[] repeatedArr = new String[count];
+        Arrays.fill(repeatedArr, repeated);
+        return String.join(delimiter, repeatedArr);
     }
 }
