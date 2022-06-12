@@ -24,9 +24,6 @@ public class ClickhouseDataSourceConfiguration {
             url = "";
         }
 
-        ClickHouseProperties properties = new ClickHouseProperties();
-        properties.setCompress(false);
-
-        return new ClickHouseDataSource((String) url, properties);
+        return new ClickHouseDataSource(url);
     }
 }
